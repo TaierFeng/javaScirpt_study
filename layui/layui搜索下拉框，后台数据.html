@@ -1,0 +1,123 @@
+<!-- layout为加载模版，并传递参数变量-->
+
+
+<!-- 使用layui，实现搜索下拉框功能：根据所选内容的不同，查询不同的数据 -->
+
+
+<% layout('/modules/admin/layout/adminDefault.html', {}){ %>
+<style type="text/css">
+    .required {
+        display: inline-block;
+        width: 10px;
+        font-size: 16px;
+        font-weight: bold;
+        vertical-align: middle;
+        color: #ff5722;
+    }
+</style>
+<form class="layui-form" id="editForm" method="post" style="padding:30px;">
+
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label"><span class="required">*</span>省份</label>
+            <div class="layui-input-inline">
+                <select name="provinceId" lay-verify="required" id="province" lay-filter="province" lay-search>
+                    <option value=''></option>
+                </select>
+<!--                <input type="text" id="province" name="provinceId" autocomplete="off" placeholder="请输入省份名称"-->
+<!--                       class="layui-input">-->
+            </div>
+        </div>
+    </div>
+
+</form>
+
+<script>
+
+    /*
+     * 取得结果：数据可以访问，也可显示在下拉选项中
+     * 现存问题：选择下拉框后，无法将选择结果显示在input中，出现input复制后被js刷新value的情况
+     * 记录时间：2020年6月20日10点17分
+     * 记录人： @TaierFeng
+     */
+
+    layui.use(['form'], function () {
+        var form = layui.form;
+
+        var selectItem = -1;
+
+        //修改鼠标样式
+        $("#province").next().find("input").eq(0).css("cursor","text");
+
+        // console.log($('#province input'));
+        // console.log($('#province').next());
+        // console.log($('#province').next().find("input"));
+
+        //获取下拉框下面的输入框
+        $('#province').next().find("input").on('input', getprovince);
+        // $('#province').next().find("input").on('change', getprovince);
+
+        function getprovince (e) {
+            // console.log(e);
+            var value = $(this).val();
+            // console.log(value);
+            // form.render('select'); //这个很重要
+            // console.log(1);
+            $.ajax({
+                url:'${admin}/company/search?name='+value,
+                dataType:'json',
+                async: true,
+                success:function(data){
+                    console.log(data);
+                    // $("#province").html("<option value=''></option>");
+                    // $("#province").remove('option:not(:first-child)')
+                    $('#province>option').remove(':not(:first-child)');
+                    if(data.count == 0) {
+                        // form.render('select'); //这个很重要
+                    }
+                    else {
+                        console.log(data.data);
+                        var html = '';
+                        $.each(data.data, function (index, item) {
+                            html += '<dd id="dd' + item.id + '" lay-value="dd' + item.id +
+                                '" class onclick="setSelect(' + item.id + ',\'' + item.name +
+                                '\');">' +
+                                item.name + '</dd>';
+                            // $('#province').append(new Option(item.name, item.id));//往下拉菜单里添加元素
+                            $('#province').append('<option id="option' + item.id + '" value=' + item.id + '>' +
+                                item.name +
+                                '</option>');//往下拉菜单里添加元素
+                        });
+                        /* 以下可以实现点击选中项，但是搜索的值会被替换
+                        // form.render('select'); //这个很重要
+                        // $('#province').next().find("input").val(value);
+                        // $('#province').next().find("input").focus();
+                        // $('#province').next().find("input").on('input', getprovince);
+                        // $("#province").next("div").addClass("layui-form-selected");
+                         * 记录时间：2020年6月20日10点19分
+                         * 记录人： @TaierFeng
+                         */
+                        $('#province').next().find("dl").html(html);
+                    }
+                }
+            });
+        }
+
+        window.setSelect = function (id, name) {
+            // console.log(name);
+            // console.log($("#option" + id));
+            // console.log($("#dd" + id));
+            console.log(selectItem);
+            if(selectItem != -1) {
+                console.log($("#dd" + selectItem));
+                $("#dd" + selectItem).removeClass("layui-this");
+                console.log("-1");
+            }
+            selectItem = id;
+            $("#dd" + id).addClass("layui-this");
+            $("#province").next().find("input").val(name);
+        }
+
+    });
+</script>
+<% } %>
